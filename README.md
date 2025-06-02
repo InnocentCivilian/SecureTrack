@@ -36,13 +36,13 @@ services.AddDataIntegrityService<MyEntity>()
 services.AddDataIntegrityService()
     .UseSha256()
     .UseRawStringSerialization();
-
+```
 
 ## 🚀 SecureTrack: Completion Checklist
 
 This checklist tracks both completed and remaining work to bring SecureTrack to full release.
 
----
+
 
 ### 🔄 Core Features
 
@@ -65,7 +65,7 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
   - [ ] Provide decorators/interceptors for insert, update, delete events
   - [ ] Ensure CDC system is triggered automatically on changes
 
----
+
 
 ### 🔒 Security & Configuration
 
@@ -74,7 +74,7 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
   - [ ] Provide default implementation using `IConfiguration`
   - [ ] Allow extension to external secret managers (e.g., Azure, AWS)
 
----
+
 
 ### 🛡️ Logging & Exception Handling
 
@@ -84,7 +84,7 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
 - [ ] Create middleware or filters for global integrity exception capture
 - [ ] Provide hooks or callbacks for custom alerting/auditing
 
----
+
 
 ### 🧪 Testing
 
@@ -101,7 +101,6 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
   - [ ] High-volume change tracking
   - [ ] Large record handling
 
----
 
 ### 📦 Packaging & Release
 
@@ -113,7 +112,7 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
   - [ ] Set up GitHub Actions release workflow
   - [ ] Automate NuGet publish on tag or release event
 
----
+
 
 ### 📖 Documentation & Examples
 
@@ -127,4 +126,4 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
 - [ ] Provide demo app:
   - [ ] Example project showing SecureTrack in action
 
----
+
