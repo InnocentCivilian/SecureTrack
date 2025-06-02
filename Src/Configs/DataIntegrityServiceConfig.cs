@@ -8,5 +8,13 @@ namespace SecureTrack.Configs
     {
         public Type HashAlgorithmType { get; set; }
         public Type SerializationStrategyType { get; set; }
+        public void Validate()
+        {
+            if (HashAlgorithmType == null)
+                throw new InvalidOperationException("Hashing algorithm must be configured.");
+
+            if (SerializationStrategyType == null)
+                throw new InvalidOperationException("Serialization strategy must be configured.");
+        }
     }
 }

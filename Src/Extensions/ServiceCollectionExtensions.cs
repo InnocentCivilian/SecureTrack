@@ -2,50 +2,67 @@
 using SecureTrack.Configs;
 using SecureTrack.Hashing;
 using SecureTrack.Serialization;
-using SecureTrack.Services;
-using SecureTrack.Services.Interfaces;
 
 namespace SecureTrack.Extensions;
 
-/// <summary>
-/// Implementation of IDataIntegrityService for managing data integrity.
-/// </summary>
-public static class ServiceCollectionExtensions
+public class DataIntegrityServiceBuilder
 {
-    public static IServiceCollection AddDataIntegrityService(
-        this IServiceCollection services,
-        DataIntegrityServiceConfig config,
-        Action<IServiceCollection> configure = null)
+    private readonly IServiceCollection _services;
+
+    public DataIntegrityServiceBuilder(IServiceCollection services)
     {
-        if (config == null) throw new ArgumentNullException(nameof(config));
+        _services = services;
+    }
 
-        // Register hashing algorithm
-        if (config.HashAlgorithmType == null || !typeof(IHashingAlgorithm).IsAssignableFrom(config.HashAlgorithmType))
-        {
-            throw new ArgumentException("Invalid or missing HashingAlgorithmType in configuration.");
-        }
-        services.AddSingleton(typeof(IHashingAlgorithm), config.HashAlgorithmType);
+    public DataIntegrityServiceBuilder UseSha256()
+    {
+        _services.AddSingleton<IHashingAlgorithm, SHA256HashingAlgorithm>();
+        return this;
+    }
 
-        // Register serialization strategy
-        if (config.SerializationStrategyType == null || !config.SerializationStrategyType.IsGenericTypeDefinition)
-        {
-            throw new ArgumentException("SerializationStrategyType must be a generic type definition.");
-        }
-        services.AddSingleton(typeof(ISerializationStrategy<>), config.SerializationStrategyType);
+    public DataIntegrityServiceBuilder UseSha512()
+    {
+        _services.AddSingleton<IHashingAlgorithm, SHA512HashingAlgorithm>();
+        return this;
+    }
 
-        // Allow custom registrations
-        configure?.Invoke(services);
+    public DataIntegrityServiceBuilder UseJsonSerialization()
+    {
+        _services.AddSingleton<ISerializationStrategy, JsonSerializationStrategy>();
+        return this;
+    }
+    public DataIntegrityServiceBuilder UseRawStringSerialization()
+    {
+        _services.AddSingleton<ISerializationStrategy, ToStringSerializationStrategy>();
+        return this;
+    }
 
-        // Register the non-generic DataIntegrityService
-        services.AddSingleton(typeof(IDataIntegrityService<>), typeof(DataIntegrityService<>));
+    public DataIntegrityServiceBuilder UseCustomHashing<TCustom>() where TCustom : class, IHashingAlgorithm
+    {
+        _services.AddSingleton<IHashingAlgorithm, TCustom>();
+        return this;
+    }
 
-        return services;
+    public DataIntegrityServiceBuilder UseCustomSerialization<T, TCustom>()
+        where TCustom : class, ISerializationStrategy
+    {
+        _services.AddSingleton<ISerializationStrategy, TCustom>();
+        return this;
+    }
+
+    public DataIntegrityServiceBuilder UseDefaultSettings<T>()
+    {
+        return UseSha256().UseJsonSerialization();
     }
 }
+
 //sample usage :
-// services.AddDataIntegrityService(
-//     new DataIntegrityServiceConfig
-//     {
-//         HashingAlgorithmType = typeof(CustomHashingAlgorithm),
-//         SerializationStrategyType = typeof(CustomSerializationStrategy<>),
-//     });
+//  Register type-specific integrity service
+// services.AddDataIntegrityService<MyEntity>()
+//     .UseSha512()
+//     .UseJsonSerialization();
+//
+//  Register general-purpose (non-generic) integrity service
+// services.AddDataIntegrityService()
+//     .UseSha256()
+//     .UseRawStringSerialization();

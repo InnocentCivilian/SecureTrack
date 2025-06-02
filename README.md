@@ -22,3 +22,109 @@ This C# library provides mechanisms to maintain data integrity and implement cha
 ### 4. Secure Configuration
 - **Secure Salt Storage**: Since the secret salt/privatekey is crucial to the digesting process, it must be stored securely. Consider using a secure configuration management system that restricts access to authorized personnel. This helps ensure that the secret remains confidential and cannot be easily compromised.
 
+## Service Registration (Using Fluent Builder)
+
+To set up the SecureTrack data integrity system, use the fluent builder provided.
+
+### Basic Setup
+
+```csharp
+services.AddDataIntegrityService<MyEntity>()
+    .UseSha512()
+    .UseJsonSerialization();
+
+services.AddDataIntegrityService()
+    .UseSha256()
+    .UseRawStringSerialization();
+
+
+## 🚀 SecureTrack: Completion Checklist
+
+This checklist tracks both completed and remaining work to bring SecureTrack to full release.
+
+---
+
+### 🔄 Core Features
+
+- [x] Digest-based integrity system with pluggable hashing (`SHA256`, `SHA512`)
+- [x] Pluggable serialization strategies (`JSON`, `RawString`)
+- [x] Generic and non-generic `IDataIntegrityService` interfaces
+- [x] Fluent DI registration with `DataIntegrityServiceBuilder`
+- [x] Custom exception handling (`IntegrityViolationException`)
+- [x] Logging integration via `ILogger`
+- [x] Secure salt usage (passed in methods)
+
+- [ ] **Implement Change Data Capture (CDC)**
+  - [ ] Define `CdcEntry` model (record ID, operation type, old/new values, timestamp, user)
+  - [ ] Create `ICdcRepository` interface for persisting CDC logs
+  - [ ] Provide default repository implementation (e.g., in-memory, EF Core)
+  - [ ] Hook CDC logging into `DataIntegrityService` after integrity operations
+
+- [ ] **Add Event-Based Triggers**
+  - [ ] Design `IDataChangeNotifier` or interceptor interface
+  - [ ] Provide decorators/interceptors for insert, update, delete events
+  - [ ] Ensure CDC system is triggered automatically on changes
+
+---
+
+### 🔒 Security & Configuration
+
+- [ ] **Secure Salt/Key Storage**
+  - [ ] Create `ISecretProvider` abstraction for secure salt/key retrieval
+  - [ ] Provide default implementation using `IConfiguration`
+  - [ ] Allow extension to external secret managers (e.g., Azure, AWS)
+
+---
+
+### 🛡️ Logging & Exception Handling
+
+- [x] Basic logging via `ILogger`
+- [ ] Add structured logging with rich context (record ID, type, operation, failure reason)
+- [ ] Integrate with structured log sinks (e.g., Serilog)
+- [ ] Create middleware or filters for global integrity exception capture
+- [ ] Provide hooks or callbacks for custom alerting/auditing
+
+---
+
+### 🧪 Testing
+
+- [ ] Add unit tests:
+  - [ ] Hashing algorithms
+  - [ ] Serialization strategies
+  - [ ] Data integrity service methods
+
+- [ ] Add integration tests:
+  - [ ] Full integrity + CDC flow
+  - [ ] Edge cases (tampering, mismatched digests)
+
+- [ ] Add performance/load tests:
+  - [ ] High-volume change tracking
+  - [ ] Large record handling
+
+---
+
+### 📦 Packaging & Release
+
+- [ ] **GitHub Actions Build**
+  - [ ] Add CI workflow (build, test, validate) on push/pull to `main`/`dev`
+
+- [ ] **NuGet Packaging**
+  - [ ] Configure `.csproj` or `.nuspec` for NuGet metadata
+  - [ ] Set up GitHub Actions release workflow
+  - [ ] Automate NuGet publish on tag or release event
+
+---
+
+### 📖 Documentation & Examples
+
+- [x] Service registration examples (`AddDataIntegrityService<T>`, `AddDataIntegrityService()`)
+- [ ] Expand README:
+  - [ ] Code samples for digest + validation
+  - [ ] CDC usage examples
+  - [ ] Salt/key handling explanation
+  - [ ] Custom implementation guides
+
+- [ ] Provide demo app:
+  - [ ] Example project showing SecureTrack in action
+
+---

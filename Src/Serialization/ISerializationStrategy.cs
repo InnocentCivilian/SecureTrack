@@ -3,7 +3,7 @@
 /// <summary>
 /// Interface for serialization strategies.
 /// </summary>
-public interface ISerializationStrategy<T>
+public interface ISerializationStrategy
 {
-    string Serialize(T record);
+    string Serialize(object record);
 }

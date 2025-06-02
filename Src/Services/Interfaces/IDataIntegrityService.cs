@@ -33,3 +33,34 @@ public interface IDataIntegrityService<T>
     /// <param name="integrityException">The exception that represents the integrity violation.</param>
     void HandleIntegrityViolation(IntegrityViolationException integrityException);
 }
+/// <summary>
+/// Provides data integrity services for verifying and maintaining the integrity of data records.
+/// </summary>
+public interface IDataIntegrityService
+{
+    /// <summary>
+    /// Generates a digest (hash) for a given record using the specified secret salt.
+    /// </summary>
+    /// <param name="recordData">The data record to generate the digest for.</param>
+    /// <param name="secretSalt">The secret salt to enhance the security of the digest.</param>
+    /// <returns>The generated digest as a string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when recordData or secretSalt is null or empty.</exception>
+    string GenerateDigest(object recordData, string secretSalt);
+
+    /// <summary>
+    /// Validates the stored digest against the generated digest from the record data and secret salt.
+    /// </summary>
+    /// <param name="storedDigest">The previously stored digest to validate against.</param>
+    /// <param name="recordData">The current data record for validation.</param>
+    /// <param name="secretSalt">The secret salt used when generating the original digest.</param>
+    /// <returns>True if the digests match (indicating data integrity); otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when storedDigest, recordData, or secretSalt is null or empty.</exception>
+    bool ValidateDigest(string storedDigest, object recordData, string secretSalt);
+
+    /// <summary>
+    /// Handles violations of data integrity, typically by logging or triggering custom logic.
+    /// </summary>
+    /// <param name="integrityException">The exception representing the integrity violation.</param>
+    /// <exception cref="ArgumentNullException">Thrown when integrityException is null.</exception>
+    void HandleIntegrityViolation(IntegrityViolationException integrityException);
+}

@@ -1,12 +1,27 @@
-﻿namespace SecureTrack.Serialization;
+﻿using System.Reflection;
+using System.Text.Json;
+
+namespace SecureTrack.Serialization;
 
 /// <summary>
 /// JSON-based serialization strategy.
 /// </summary>
-public class JsonSerializationStrategy<T> : ISerializationStrategy<T>
+public class JsonSerializationStrategy : ISerializationStrategy
 {
-    public string Serialize(T record)
+    private string SerializeObjectWithSortedKeys(object record)
     {
-        return System.Text.Json.JsonSerializer.Serialize(record);
+        var sortedDict = record.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .OrderBy(p => p.Name)
+            .ToDictionary(
+                prop => prop.Name,
+                prop => prop.GetValue(record)
+            );
+
+        return JsonSerializer.Serialize(sortedDict);
+    }
+    public string Serialize(object record)
+    {
+        return SerializeObjectWithSortedKeys(record);
     }
 }
