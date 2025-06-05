@@ -1,3 +1,4 @@
+using System.Reflection;
 using SecureTrack.Exceptions;
 using SecureTrack.Services.Interfaces;
 using SecureTrack.Hashing;
@@ -78,59 +79,93 @@ namespace SecureTrack.Services
     /// <summary>
     /// Provides an implementation of the IDataIntegrityService interface for managing data integrity across any type of record.
     /// </summary>
+    /// <summary>
+    /// Provides an implementation of <see cref="IDataIntegrityService"/> for generating and validating digests of data records.
+    /// </summary>
     public class DataIntegrityService : IDataIntegrityService
     {
         private readonly IHashingAlgorithm _hashingAlgorithm;
-        private readonly ISerializationStrategy _serializationStrategy;
+        private readonly ISerializationStrategy _serializer;
         private readonly ILogger<DataIntegrityService> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataIntegrityService"/> class.
         /// </summary>
-        /// <param name="hashingAlgorithm">The hashing algorithm used to compute the digest.</param>
-        /// <param name="serializationStrategy">The serialization strategy used to serialize the record data.</param>
-        /// <param name="logger">The logger used for logging integrity violations and related events.</param>
-        /// <exception cref="ArgumentNullException">Thrown when any dependency is null.</exception>
+        /// <param name="hashingAlgorithm">The hashing algorithm used for digest computation.</param>
+        /// <param name="serializer">The serialization strategy used to convert objects into strings.</param>
+        /// <param name="logger">The logger for recording integrity validation failures or events.</param>
         public DataIntegrityService(
             IHashingAlgorithm hashingAlgorithm,
-            ISerializationStrategy serializationStrategy,
+            ISerializationStrategy serializer,
             ILogger<DataIntegrityService> logger)
         {
             _hashingAlgorithm = hashingAlgorithm ?? throw new ArgumentNullException(nameof(hashingAlgorithm));
-            _serializationStrategy =
-                serializationStrategy ?? throw new ArgumentNullException(nameof(serializationStrategy));
+            _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <inheritdoc />
-        public string GenerateDigest(object recordData, string secretSalt)
+        /// <inheritdoc/>
+        public string Serialize(object recordData)
         {
-            if (recordData == null) throw new ArgumentNullException(nameof(recordData));
-            if (string.IsNullOrEmpty(secretSalt)) throw new ArgumentNullException(nameof(secretSalt));
-
-            string serializedData = _serializationStrategy.Serialize(recordData);
-            string combinedData = serializedData + secretSalt;
-            return _hashingAlgorithm.ComputeHash(combinedData);
+            return _serializer.Serialize(recordData);
         }
 
-        /// <inheritdoc />
-        public bool ValidateDigest(string storedDigest, object recordData, string secretSalt)
+        /// <inheritdoc/>
+        public string GenerateDigest(object recordData, string secretSalt = null)
         {
-            if (string.IsNullOrEmpty(storedDigest)) throw new ArgumentNullException(nameof(storedDigest));
             if (recordData == null) throw new ArgumentNullException(nameof(recordData));
-            if (string.IsNullOrEmpty(secretSalt)) throw new ArgumentNullException(nameof(secretSalt));
 
-            string generatedDigest = GenerateDigest(recordData, secretSalt);
-            return string.Equals(storedDigest, generatedDigest, StringComparison.Ordinal);
+            var serialized = _serializer.Serialize(recordData);
+            var input = string.IsNullOrEmpty(secretSalt) ? serialized : serialized + secretSalt;
+            return _hashingAlgorithm.ComputeHash(input);
         }
 
-        /// <inheritdoc />
-        public void HandleIntegrityViolation(IntegrityViolationException integrityException)
+        /// <inheritdoc/>
+        public Task CheckIntegrityAsync(object recordData, string secretSalt = null)
         {
-            if (integrityException == null) throw new ArgumentNullException(nameof(integrityException));
+            if (recordData == null)
+                throw new ArgumentNullException(nameof(recordData));
 
-            _logger.LogError("Integrity violation detected: {Message}", integrityException.Message);
-            // Additional handling logic, such as notifying systems or auditing, can be added here.
+            var type = recordData.GetType();
+
+            // Skip check if [SkipIntegrityCheck] is applied
+            if (type.GetCustomAttribute<Attributes.SkipIntegrityCheckAttribute>() != null)
+            {
+                _logger.LogDebug("Skipping integrity check for {EntityType} due to [SkipIntegrityCheck]",
+                    type.Name);
+                return Task.CompletedTask;
+            }
+
+            if (recordData is not IHashable hashable)
+                throw new InvalidOperationException("Record must implement IHashable to support integrity checks.");
+
+            var expected = hashable.Hash;
+            var actual = GenerateDigest(recordData, secretSalt);
+
+            if (!string.Equals(expected, actual, StringComparison.Ordinal))
+            {
+                _logger.LogError("Data integrity violation detected on entity of type {EntityType}.", type.Name);
+                throw new IntegrityViolationException($"Hash mismatch detected for entity of type {type.Name}.");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public void UpdateDigest(object recordData, string secretSalt = null)
+        {
+            var type = recordData.GetType();
+
+            if (type.GetCustomAttribute<Attributes.SkipIntegrityCheckAttribute>() != null)
+            {
+                _logger.LogDebug("Skipping digest update for {EntityType} due to [SkipIntegrityCheck]", type.Name);
+                return;
+            }
+
+            if (recordData is not IHashable hashable)
+                throw new InvalidOperationException("Record must implement IHashable to support digest updates.");
+
+            hashable.Hash = GenerateDigest(recordData, secretSalt);
         }
     }
 }

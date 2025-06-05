@@ -33,34 +33,40 @@ public interface IDataIntegrityService<T>
     /// <param name="integrityException">The exception that represents the integrity violation.</param>
     void HandleIntegrityViolation(IntegrityViolationException integrityException);
 }
+
 /// <summary>
-/// Provides data integrity services for verifying and maintaining the integrity of data records.
+/// Defines the contract for computing and validating data integrity using digest-based verification.
 /// </summary>
 public interface IDataIntegrityService
 {
     /// <summary>
-    /// Generates a digest (hash) for a given record using the specified secret salt.
+    /// Serializes the given data record to a string representation using the configured serialization strategy.
     /// </summary>
-    /// <param name="recordData">The data record to generate the digest for.</param>
-    /// <param name="secretSalt">The secret salt to enhance the security of the digest.</param>
-    /// <returns>The generated digest as a string.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when recordData or secretSalt is null or empty.</exception>
-    string GenerateDigest(object recordData, string secretSalt);
+    /// <param name="recordData">The object to serialize.</param>
+    /// <returns>A string representation of the object.</returns>
+    string Serialize(object recordData);
 
     /// <summary>
-    /// Validates the stored digest against the generated digest from the record data and secret salt.
+    /// Generates a cryptographic digest from a record's data and an optional secret salt.
     /// </summary>
-    /// <param name="storedDigest">The previously stored digest to validate against.</param>
-    /// <param name="recordData">The current data record for validation.</param>
-    /// <param name="secretSalt">The secret salt used when generating the original digest.</param>
-    /// <returns>True if the digests match (indicating data integrity); otherwise, false.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when storedDigest, recordData, or secretSalt is null or empty.</exception>
-    bool ValidateDigest(string storedDigest, object recordData, string secretSalt);
+    /// <param name="recordData">The data object to hash.</param>
+    /// <param name="secretSalt">Optional secret salt to add to the input for hash strengthening.</param>
+    /// <returns>A digest string representing the object's integrity fingerprint.</returns>
+    string GenerateDigest(object recordData, string secretSalt = null);
 
     /// <summary>
-    /// Handles violations of data integrity, typically by logging or triggering custom logic.
+    /// Validates the stored digest of a record against its computed value. Throws an exception if they do not match.
     /// </summary>
-    /// <param name="integrityException">The exception representing the integrity violation.</param>
-    /// <exception cref="ArgumentNullException">Thrown when integrityException is null.</exception>
-    void HandleIntegrityViolation(IntegrityViolationException integrityException);
+    /// <param name="recordData">The record object implementing <see cref="IHashable"/> to validate.</param>
+    /// <param name="secretSalt">Optional secret salt used during digest generation.</param>
+    /// <exception cref="IntegrityViolationException">Thrown if the integrity check fails.</exception>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task CheckIntegrityAsync(object recordData, string secretSalt = null);
+
+    /// <summary>
+    /// Updates the digest of the record to reflect its current state by recalculating the hash and setting it on the object.
+    /// </summary>
+    /// <param name="recordData">The record implementing <see cref="IHashable"/> to update.</param>
+    /// <param name="secretSalt">Optional secret salt used during digest generation.</param>
+    void UpdateDigest(object recordData, string secretSalt = null);
 }

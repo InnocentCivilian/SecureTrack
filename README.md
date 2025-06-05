@@ -55,10 +55,10 @@ This checklist tracks both completed and remaining work to bring SecureTrack to 
 - [x] Secure salt usage (passed in methods)
 
 - [ ] **Implement Change Data Capture (CDC)**
-  - [ ] Define `CdcEntry` model (record ID, operation type, old/new values, timestamp, user)
-  - [ ] Create `ICdcRepository` interface for persisting CDC logs
-  - [ ] Provide default repository implementation (e.g., in-memory, EF Core)
-  - [ ] Hook CDC logging into `DataIntegrityService` after integrity operations
+  - [x] Define `CdcEntry` model (record ID, operation type, old/new values, timestamp, user)
+  - [x] Create `ICdcRepository` interface for persisting CDC logs
+  - [x] Provide default repository implementation (e.g., in-memory, EF Core)
+  - [x] Hook CDC logging into `DataIntegrityService` after integrity operations
 
 - [ ] **Add Event-Based Triggers**
   - [ ] Design `IDataChangeNotifier` or interceptor interface
